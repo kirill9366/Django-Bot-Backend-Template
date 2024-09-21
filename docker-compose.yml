@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+
+  django:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./:/usr/src/survey-backend
+    environment:
+      - DB_URL=docker/database/main_database.db
+      - DJANGO_SUPERUSER_PASSWORD=admin
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@gmail.com
+    ports:
+      - "8081:8080"
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8081/admin"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+
+  nginx:
+    image: "nginx:latest"
+    restart: unless-stopped
+    volumes:
+      - ./docker/nginx:/etc/nginx/conf.d
+      - ./:/usr/src/survey-backend
+    depends_on:
+      - django
+    ports:
+      - "86:80"
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1280
